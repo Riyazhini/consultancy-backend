@@ -1,14 +1,16 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import path from "path";
 import connectDB from "./db.js";
 import productRoutes from "./routes/productRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import billRoutes from "./routes/billRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
-
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 
@@ -21,7 +23,8 @@ app.use((req, res, next) => {
   next();
 });
 
-connectDB();
+// Connect to DB (cached for serverless warm starts)
+const dbPromise = connectDB();
 
 app.get("/", (req, res) => {
   res.send("Lumo Industries Backend Running");
@@ -49,7 +52,13 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;
 
